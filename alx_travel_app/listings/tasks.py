@@ -36,8 +36,8 @@ def send_payment_confirmation_email(payment):
             
             <h3>Booking Details:</h3>
             <ul>
-                <li><strong>Property:</strong> {booking.property.name}</li>
-                <li><strong>Location:</strong> {booking.property.location}</li>
+                <li><strong>Property:</strong> {booking.listing.name}</li>
+                <li><strong>Location:</strong> {booking.listing.location}</li>
                 <li><strong>Check-in:</strong> {booking.start_date}</li>
                 <li><strong>Check-out:</strong> {booking.end_date}</li>
                 <li><strong>Duration:</strong> {booking.duration_days} nights</li>
@@ -82,12 +82,12 @@ def send_booking_creation_email(booking_id):
         from .models import Booking
         
         booking = Booking.objects.select_related(
-            'user', 'property', 'property__host'
+            'user', 'listing', 'listing__host'
         ).get(booking_id=booking_id)
         
         user = booking.user
         
-        subject = f'Booking Created - {booking.property.name}'
+        subject = f'Booking Created - {booking.listing.name}'
         
         html_message = f"""
         <html>
@@ -98,8 +98,8 @@ def send_booking_creation_email(booking_id):
             
             <h3>Booking Details:</h3>
             <ul>
-                <li><strong>Property:</strong> {booking.property.name}</li>
-                <li><strong>Location:</strong> {booking.property.location}</li>
+                <li><strong>Property:</strong> {booking.listing.name}</li>
+                <li><strong>Location:</strong> {booking.listing.location}</li>
                 <li><strong>Check-in:</strong> {booking.start_date}</li>
                 <li><strong>Check-out:</strong> {booking.end_date}</li>
                 <li><strong>Total Price:</strong> ETB {booking.total_price}</li>
@@ -138,12 +138,12 @@ def send_booking_confirmation_email(booking_id):
         from .models import Booking
         
         booking = Booking.objects.select_related(
-            'user', 'property', 'property__host'
+            'user', 'listing', 'listing__host'
         ).get(booking_id=booking_id)
         
         user = booking.user
         
-        subject = f'Booking Confirmed - {booking.property.name}'
+        subject = f'Booking Confirmed - {booking.listing.name}'
         
         html_message = f"""
         <html>
@@ -154,8 +154,8 @@ def send_booking_confirmation_email(booking_id):
             
             <h3>Booking Details:</h3>
             <ul>
-                <li><strong>Property:</strong> {booking.property.name}</li>
-                <li><strong>Location:</strong> {booking.property.location}</li>
+                <li><strong>Property:</strong> {booking.listing.name}</li>
+                <li><strong>Location:</strong> {booking.listing.location}</li>
                 <li><strong>Check-in:</strong> {booking.start_date}</li>
                 <li><strong>Check-out:</strong> {booking.end_date}</li>
                 <li><strong>Total Price:</strong> ETB {booking.total_price}</li>
@@ -163,9 +163,9 @@ def send_booking_confirmation_email(booking_id):
             
             <h3>Host Information:</h3>
             <ul>
-                <li><strong>Name:</strong> {booking.property.host.first_name} {booking.property.host.last_name}</li>
-                <li><strong>Email:</strong> {booking.property.host.email}</li>
-                <li><strong>Phone:</strong> {booking.property.host.phone_number or 'N/A'}</li>
+                <li><strong>Name:</strong> {booking.listing.host.first_name} {booking.listing.host.last_name}</li>
+                <li><strong>Email:</strong> {booking.listing.host.email}</li>
+                <li><strong>Phone:</strong> {booking.listing.host.phone_number or 'N/A'}</li>
             </ul>
             
             <p>We hope you have a wonderful stay!</p>

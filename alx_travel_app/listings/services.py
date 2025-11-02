@@ -43,7 +43,7 @@ class ChapaService:
         # retrieve all the information from the booking dictionary
 
         booking_id = booking['booking_id']
-        property_name = booking['property']['name']
+        property_name = booking['listing']['name']
         start_date = booking['start_date']
         end_date = booking['end_date']
         total_price = booking['total_price']

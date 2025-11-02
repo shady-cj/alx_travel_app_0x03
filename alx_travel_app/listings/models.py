@@ -53,7 +53,7 @@ class Listing(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'Property'
+        db_table = 'Listing'
         indexes = [
             models.Index(fields=['host']),
             models.Index(fields=['location']),
@@ -88,10 +88,10 @@ class BookingStatus(models.Model):
 
 class Booking(models.Model):
     """
-    Booking model representing property reservations
+    Booking model representing listing reservations
     """
     booking_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    property = models.ForeignKey(
+    listing = models.ForeignKey(
         Listing,
         on_delete=models.CASCADE,
         related_name='bookings'
@@ -118,7 +118,7 @@ class Booking(models.Model):
     class Meta:
         db_table = 'Booking'
         indexes = [
-            models.Index(fields=['property']),
+            models.Index(fields=['listing']),
             models.Index(fields=['user']),
             models.Index(fields=['start_date', 'end_date']),
         ]
@@ -141,26 +141,27 @@ class Booking(models.Model):
         """
 
     def __str__(self):
-        return f"Booking {self.booking_id} - {self.property.name}"
+        return f"Booking {self.booking_id} - {self.listing.name}"
 
-    @property
-    def duration_days(self):
-        """Calculate booking duration in days"""
-        return (self.end_date - self.start_date).days
 
     def clean(self):
         """Custom validation"""
         from django.core.exceptions import ValidationError
         if self.end_date <= self.start_date:
             raise ValidationError('End date must be after start date')
+        
+    @property
+    def duration_days(self):
+        """Calculate booking duration in days"""
+        return (self.end_date - self.start_date).days
 
 
 class Review(models.Model):
     """
-    Review model for property reviews
+    Review model for listing reviews
     """
     review_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    property = models.ForeignKey(
+    listing = models.ForeignKey(
         Listing,
         on_delete=models.CASCADE,
         related_name='reviews'
@@ -182,19 +183,19 @@ class Review(models.Model):
     class Meta:
         db_table = 'Review'
         indexes = [
-            models.Index(fields=['property']),
+            models.Index(fields=['listing']),
             models.Index(fields=['user']),
             models.Index(fields=['rating']),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=['property', 'user'],
-                name='unique_user_property_review'
+                fields=['listing', 'user'],
+                name='unique_user_listing_review'
             )
         ]
 
     def __str__(self):
-        return f"Review by {self.user.first_name} for {self.property.name} - {self.rating}/5"
+        return f"Review by {self.user.first_name} for {self.listing.name} - {self.rating}/5"
 
 
 class PaymentMethod(models.Model):

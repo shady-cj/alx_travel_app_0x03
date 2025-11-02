@@ -102,7 +102,7 @@ class ListingViewSet(viewsets.ModelViewSet):
     Partial Update: PATCH /api/listings/{property_id}/
     Delete: DELETE /api/listings/{property_id}/
     """
-    queryset = Listing.objects.all().select_related('host').prefetch_related('reviews')
+    queryset = Listing.objects.select_related('host').prefetch_related('reviews')
     serializer_class = ListingSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsHostOrReadOnly]
     lookup_field = 'property_id'
@@ -151,7 +151,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         listing = self.get_object()
         
         # Check if user has already reviewed this property
-        if Review.objects.filter(property=listing, user=request.user).exists():
+        if Review.objects.filter(listing=listing, user=request.user).exists():
             return Response(
                 {'error': 'You have already reviewed this property'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -159,7 +159,7 @@ class ListingViewSet(viewsets.ModelViewSet):
         
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(property=listing, user=request.user)
+            serializer.save(listing=listing, user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -205,13 +205,13 @@ class BookingViewSet(viewsets.ModelViewSet):
     Partial Update: PATCH /api/bookings/{booking_id}/
     Delete: DELETE /api/bookings/{booking_id}/
     """
-    queryset = Booking.objects.all().select_related('property', 'user', 'status')
+    queryset = Booking.objects.select_related('listing', 'user', 'status')
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'booking_id'
     
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['status__status_name', 'property']
+    filterset_fields = ['status__status_name', 'listing']
     ordering_fields = ['start_date', 'created_at']
     ordering = ['-created_at']
 
@@ -232,7 +232,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         
         # Get bookings where user is either the guest or the host
         return Booking.objects.filter(
-            models.Q(user=user) | models.Q(property__host=user)
+            models.Q(user=user) | models.Q(listing__host=user)
         ).distinct()
 
     def perform_create(self, serializer):
@@ -250,7 +250,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         
         # Only the host can confirm bookings
-        if request.user != booking.property.host:
+        if request.user != booking.listing.host:
             return Response(
                 {'error': 'Only the host can confirm bookings'},
                 status=status.HTTP_403_FORBIDDEN
@@ -273,7 +273,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         
         # Only the guest or host can cancel
-        if request.user not in [booking.user, booking.property.host]:
+        if request.user not in [booking.user, booking.listing.host]:
             return Response(
                 {'error': 'You do not have permission to cancel this booking'},
                 status=status.HTTP_403_FORBIDDEN
@@ -303,7 +303,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         Get all bookings for properties hosted by the current user
         Endpoint: GET /api/bookings/hosting_bookings/
         """
-        bookings = Booking.objects.filter(property__host=request.user)
+        bookings = Booking.objects.filter(listing__host=request.user)
         serializer = self.get_serializer(bookings, many=True)
         return Response(serializer.data)
 
@@ -313,7 +313,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     ViewSet for Review model.
     Provides CRUD operations for reviews.
     """
-    queryset = Review.objects.all().select_related('property', 'user')
+    queryset = Review.objects.select_related('listing', 'user')
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     lookup_field = 'review_id'
@@ -400,7 +400,7 @@ class PaymentStatusView(APIView):
         payment_data = verification_response['data']
         try:
             payment_instance = Payment.objects.select_related(
-                'booking', 'booking__user', 'booking__property'
+                'booking', 'booking__user', 'booking__listing'
             ).get(chapa_reference=tx_ref)
 
             if (verification_response['status'] == 'success'):

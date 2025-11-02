@@ -36,7 +36,7 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     # API routes
-    path('api/', include('listings.urls')),
+    path('api/', include('alx_travel_app.listings.urls')),
 ]
 
 # Serve media files in development

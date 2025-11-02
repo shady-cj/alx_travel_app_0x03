@@ -58,7 +58,7 @@ class ListingSerializer(serializers.ModelSerializer):
     Serializer for Listing model
     """
     host = UserSerializer(read_only=True)
-    average_rating = serializers.ReadOnlyField()
+    average_rating = serializers.DecimalField(read_only=True, max_digits=4, decimal_places=2)
     reviews_count = serializers.SerializerMethodField()
     reviews = ReviewSerializer(many=True, read_only=True)
 
@@ -104,14 +104,14 @@ class BookingSerializer(serializers.ModelSerializer):
     Serializer for Booking model
     """
     user = UserSerializer(read_only=True)
-    property = ListingSerializer(read_only=True)
+    listing = ListingSerializer(read_only=True)
     status = BookingStatusSerializer(read_only=True)
     duration_days = serializers.ReadOnlyField()
 
     class Meta:
         model = Booking
         fields = [
-            'booking_id', 'property', 'user', 'start_date', 'end_date',
+            'booking_id', 'listing', 'user', 'start_date', 'end_date',
             'total_price', 'status', 'duration_days', 'created_at'
         ]
         read_only_fields = ['booking_id', 'created_at']
@@ -147,7 +147,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
         # Check for overlapping bookings
         overlapping_bookings = Booking.objects.filter(
-            property=property_obj,
+            listing=property_obj,
             start_date__lt=end_date,
             end_date__gt=start_date
         ).exclude(
@@ -157,18 +157,18 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         if overlapping_bookings.exists():
             raise serializers.ValidationError("Property is not available for the selected dates")
 
-        attrs['property'] = property_obj
+        attrs['listing'] = property_obj
         return attrs
 
     def create(self, validated_data):
-        property_obj = validated_data.pop('property')
+        property_obj = validated_data.pop('listing')
         validated_data.pop('property_id')
         
         # Calculate total price
         duration = (validated_data['end_date'] - validated_data['start_date']).days
         total_price = property_obj.price_per_night * duration
         validated_data['total_price'] = total_price
-        validated_data['property'] = property_obj
+        validated_data['listing'] = property_obj
 
         # Set default status (you might want to create this status first)
         default_status, _ = BookingStatus.objects.get_or_create(status_name='pending')
